@@ -4,10 +4,6 @@ document.getElementById("findButton").onclick = function() {
     
     const alphabetizedInput = alphabetize(typedText);
 
-    function alphabetize(a) {
-        return a.toLowerCase().split("").sort().join("").trim();
-    }
-
     let anagrams = [];
     for (let word of words) {
         if (alphabetizedInput.length == word.length && alphabetizedInput == alphabetize(word)) {
@@ -17,7 +13,47 @@ document.getElementById("findButton").onclick = function() {
 
     const resultsDiv = document.getElementById("results");
     resultsDiv.textContent = "";
+    const frequentMatches = document.getElementById("frequentlyMatchedWords");
+    frequentMatches.textContent = "";
     const resultsString = anagrams.join(', ');
     const resultsTextNode = document.createTextNode(resultsString);
     resultsDiv.appendChild(document.createElement('p').appendChild(resultsTextNode));
+}
+
+document.getElementById("findTheMostMatched").onclick = function() {
+    const threshold = 5;
+    const alphabetizedDictionaryContents = {};
+
+    for (let word of words) {
+        const alphabetizedWord = alphabetize(word);
+        if (alphabetizedDictionaryContents[alphabetizedWord] === undefined) {
+            alphabetizedDictionaryContents[alphabetizedWord] = [word];
+        } else {
+            alphabetizedDictionaryContents[alphabetizedWord].push(word);
+        }
+    }
+
+    // console.log(alphabetizedDictionaryContents);
+    for (let key in alphabetizedDictionaryContents) {
+        let entry = alphabetizedDictionaryContents[key];
+        if (entry.length >= threshold) {
+            // console.log(entry);
+            pushToScreen(entry);
+        }
+    }
+
+    function pushToScreen(entry) {
+        const resultsDiv = document.getElementById("frequentlyMatchedWords");
+        const resultsString = entry.join(', ');
+        const resultsTextNode = document.createTextNode(resultsString);
+        const resultsParagraph = document.createElement('p');
+        resultsParagraph.appendChild(resultsTextNode);
+        resultsDiv.appendChild(resultsParagraph);
+    }
+
+};
+
+
+function alphabetize(a) {
+    return a.toLowerCase().split("").sort().join("").trim();
 }
