@@ -33,11 +33,9 @@ document.getElementById("findTheMostMatched").onclick = function() {
         }
     }
 
-    // console.log(alphabetizedDictionaryContents);
     for (let key in alphabetizedDictionaryContents) {
         let entry = alphabetizedDictionaryContents[key];
         if (entry.length >= threshold) {
-            // console.log(entry);
             pushToScreen(entry);
         }
     }
@@ -52,6 +50,7 @@ document.getElementById("findTheMostMatched").onclick = function() {
     }
 
 };
+
 
 
 function alphabetize(a) {
