@@ -1,4 +1,5 @@
 "use strict";
+
 document.getElementById("findButton").onclick = function() {
     clearAllResultDivs();
     pushToScreen("results", "Anagrams: ");
@@ -14,12 +15,13 @@ document.getElementById("findButton").onclick = function() {
     pushToScreen("results", anagrams.join(', '));
 }
 
-document.getElementById("findTheMostMatched").onclick = function() {
+document.getElementById("five_or_more").onclick = function() {
     clearAllResultDivs();
     pushToScreen("frequentlyMatchedWords", "Anagram sets with at least 5 members: ");
     const threshold = 5;
     const alphabetizedDictionaryContents = alphabetizeDictionaryContents();
 
+    let results = [];
     for (let key in alphabetizedDictionaryContents) {
         let entry = alphabetizedDictionaryContents[key];
         if (entry.length >= threshold) {
@@ -29,41 +31,68 @@ document.getElementById("findTheMostMatched").onclick = function() {
 };
 
 document.getElementById("twoWordAnagramButton").onclick = function() {
-    clearAllResultDivs();
-    pushToScreen("twoWordResults", "2-word anagrams formed from input: ");
     const alphabetizedInput = getAlphabetizedInput();
     const pairsList = generateAnagramKeyPairs(alphabetizedInput);
-    const anagramKeys = alphabetizeDictionaryContents();
-    for (let [shortPart, longPart] of pairsList) {
-        let workingString = "";
-        workingString += anagramKeys[shortPart].join(',');
-        workingString += " + ";
-        workingString += anagramKeys[longPart].join(',');
-        pushToScreen("twoWordResults", workingString);
-    }
+
+    publishAnagrams("twoWordResults", "2-word anagrams formed from input: ", pairsList);
 }
 
-function generateAnagramKeyPairs(source) {
+document.getElementById("threeWordAnagramButton").onclick = function() {
+    const alphabetizedInput = getAlphabetizedInput();
+    const pairsList = generateAnagramKeyPairs(alphabetizedInput, 3);
+
+    publishAnagrams("threeWordResults", "3-word anagrams formed from input: ", pairsList);
+}
+
+function generateAnagramKeyPairs(source, partitions = 2) {
+    const alphabetizedDictionaryContents = alphabetizeDictionaryContents();
+    const possiblePairs = partitionInput(source, partitions);
+
+    let results = possiblePairs.filter((list) => {
+        for (let element of list) {
+            if (!(element in alphabetizedDictionaryContents)) {
+                return false;
+            }
+        }
+        return true;
+    });   
+    return results;
+}
+
+
+function areAnagramKeyMathces(possiblePairs) {
     const alphabetizedDictionaryContents = alphabetizeDictionaryContents();
 
-    const possiblePairs = partitionInput(source, 2);
-    let results = possiblePairs.filter(([shortPart, longPart]) => shortPart in alphabetizedDictionaryContents && longPart in alphabetizedDictionaryContents);
-    return results;
+    let [shortPart, longPart] = possiblePairs;
+    if (shortPart in alphabetizedDictionaryContents) {
+        if (typeof longPart === 'string') {
+            return (longPart in alphabetizedDictionaryContents);
+        } else {
+            return areAnagramKeyMathces(longPart);
+        }
+    }
 }
 
 function partitionInput(source, partitions = 2) {
     let listOfComplements = [];
-    const longestLengthOfShortedPart = Math.floor(source.length / partitions);
-    for (let i = 1; i <= longestLengthOfShortedPart; i++) {
-        let newAdditions = partitionWithFixedShortestLength(source, i, partitions);
-        for (let element of newAdditions) {
-            listOfComplements.push(element);
+    const longestLengthOfShortPart = Math.floor(source.length / partitions);
+    for (let i = 1; i <= longestLengthOfShortPart; i++) {
+        let newAdditions = splitIntoComplementsWithFixedShortestLength(source, i);
+        for (let [shortPart, longPart] of newAdditions) {
+            if (partitions == 2) {
+                listOfComplements.push([shortPart, longPart]);
+            } else if (partitions == 3) {
+                let innerComponents = partitionInput(longPart, partitions - 1);
+                for (let [a,b] of innerComponents) {
+                    listOfComplements.push([shortPart, a, b]);
+                }
+            }
         }
     }
     return listOfComplements;
 }
 
-function partitionWithFixedShortestLength(source, shortestLength, partitionCount) {
+function splitIntoComplementsWithFixedShortestLength(source, shortestLength) {
     let listOfComplements = [];
 
     let complementGenerator = function(progress, remainingOptions, spotsNeeded) {
@@ -82,7 +111,7 @@ function partitionWithFixedShortestLength(source, shortestLength, partitionCount
         }
     }
 
-    complementGenerator("", source, shortestLength, partitionCount);
+    complementGenerator("", source, shortestLength);
     return listOfComplements;
 }
 
@@ -128,6 +157,21 @@ function alphabetize(a) {
 
 function getAlphabetizedInput() {
     return alphabetize(document.getElementById("input").value);
+}
+
+function publishAnagrams(divId, titleString, matchList) {
+    clearAllResultDivs();
+    pushToScreen(divId, titleString);
+    const anagramKeys = alphabetizeDictionaryContents();
+    
+    for (let combination of matchList) {
+        let workingArray = [];
+        for (let item of combination) {
+            workingArray.push(anagramKeys[item].join(','));
+        }
+        let workingString = workingArray.join(" + ");
+        pushToScreen(divId, workingString);
+    }
 }
 
 function pushToScreen(divName, resultsString) {
